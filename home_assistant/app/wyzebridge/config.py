@@ -1,3 +1,4 @@
+import json
 from os import environ, getenv
 from pathlib import Path
 
@@ -79,6 +80,16 @@ FORCE_IOTC_DETAIL: bool = bool(env_bool("FORCE_IOTC_DETAIL", style="bool") or Fa
 
 SDK_KEY: str = env_bool("SDK_KEY", style="original")
 FRESH_DATA: bool = env_bool("FRESH_DATA", style="bool")
+
+LOCKS_ENABLED: bool = env_bool("LOCKS_ENABLED", style="bool")
+LOCK_POLL_INTERVAL: int = max(env_bool("LOCK_POLL_INTERVAL", "30", style="int"), 10)
+LOCK_VERIFY_TIMEOUT: int = max(env_bool("LOCK_VERIFY_TIMEOUT", "25", style="int"), 10)
+try:
+    LOCK_OPTIONS: list = json.loads(getenv("LOCK_OPTIONS", "[]") or "[]")
+    if not isinstance(LOCK_OPTIONS, list):
+        LOCK_OPTIONS = []
+except json.JSONDecodeError:
+    LOCK_OPTIONS = []
 
 BOA_ENABLED: bool = env_bool("BOA_ENABLED", style="bool")
 BOA_INTERVAL: int = env_bool("BOA_INTERVAL", "20", style="int")

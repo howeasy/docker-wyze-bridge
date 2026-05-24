@@ -26,6 +26,7 @@ from wyzebridge.stream_manager import StreamManager
 from wyzebridge.go2rtc import native_stream_info
 from wyzebridge.wyze_api import WyzeApi
 from wyzebridge.wyze_stream import WyzeStream, WyzeStreamOptions
+from wyzebridge.wyzelocks import WyzeLockManager
 from wyzecam.api_models import WyzeAccount, WyzeCamera
 
 setup_hass(HASS_TOKEN)
@@ -38,7 +39,7 @@ if HASS_TOKEN:
 
 
 class WyzeBridge(Thread):
-    __slots__ = "api", "streams", "mtx", "main_pid"
+    __slots__ = "api", "streams", "mtx", "main_pid", "locks"
 
     def __init__(self) -> None:
         Thread.__init__(self)
@@ -54,6 +55,10 @@ class WyzeBridge(Thread):
         self.mtx.setup_webrtc(BRIDGE_IP)
         if LLHLS:
             self.mtx.setup_llhls(TOKEN_PATH, bool(HASS_TOKEN))
+        self.locks: WyzeLockManager = WyzeLockManager(
+            auth_provider=lambda: self.api.auth,
+            username_provider=lambda: self.api.creds.email,
+        )
 
     def health(self):
         mtx_alive = self.mtx.sub_process_alive()
@@ -97,6 +102,8 @@ class WyzeBridge(Thread):
             logger.debug(f"[BRIDGE] MTX config:\n{self.mtx.dump_config()}")
 
         self.mtx.start()
+        if not self.locks.is_alive():
+            self.locks.start()
         self.streams.monitor_streams(self.mtx.health_check)
 
     def restart(self, fresh_data: bool = False) -> None:
@@ -421,6 +428,8 @@ class WyzeBridge(Thread):
         if self.streams:
             self.streams.stop_all()
         self.mtx.stop()
+        if self.locks and self.locks.is_alive():
+            self.locks.stop()
         logger.info("👋 goodbye!")
         sys.exit(0)
 

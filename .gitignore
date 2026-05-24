@@ -49,3 +49,12 @@ utm-vm/
 .home_assistant_OLD/
 docs/maintainer/
 tasks.json
+
+# Local venv (not part of the project)
+.venv/
+
+# Local discovery / one-off probe scripts with hardcoded device MACs.
+# Debugging aids for the lock integration; not part of the shipped add-on.
+scripts/lock_discovery.py
+scripts/lock_write_test.py
+scripts/lock_validation.py

@@ -75,6 +75,9 @@ def setup_hass(hass_token: Optional[str]) -> None:
             if "MOTION_WEBHOOKS" in cam:
                 environ[f"MOTION_WEBHOOKS_{cam_name}"] = str(cam["MOTION_WEBHOOKS"])
 
+    if lock_options := conf.pop("LOCK_OPTIONS", None):
+        environ["LOCK_OPTIONS"] = json.dumps(lock_options)
+
     if mtx_options := conf.pop("MEDIAMTX", None):
         for opt in mtx_options:
             if (split_opt := opt.split("=", 1)) and len(split_opt) == 2:

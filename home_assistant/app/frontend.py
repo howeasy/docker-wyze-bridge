@@ -234,6 +234,23 @@ def create_app():
             return wb.camera_info(cam_name)
         return wb.streams.get_info(cam_name)
 
+    def _find_lock(slug: str):
+        return next((lk for lk in wb.locks.locks.values() if lk.slug == slug.lower()), None)
+
+    def _lock_to_dict(lock) -> dict:
+        return {
+            "slug": lock.slug,
+            "nickname": lock.nickname,
+            "mac": lock.mac,
+            "model": lock.model,
+            "state": lock.lock_state,
+            "battery": lock.battery_level,
+            "online": bool(lock.props.get("iot-device::iot-state")),
+            "firmware": lock.props.get("device-info::firmware-ver"),
+            "door_open": (not lock.props.get("lock::door-status")) if lock.has_door_sensor and "lock::door-status" in lock.props else None,
+            "last_seen_ts": lock.last_seen_ts,
+        }
+
     def auth_required(view):
         @wraps(view)
         def wrapped_view(*args, **kwargs):
@@ -381,6 +398,33 @@ def create_app():
         if not config:
             return {"error": f"KVS config not ready for {cam_name}"}, 503
         return config
+
+    @app.route("/api/locks")
+    @auth_required
+    def api_all_locks():
+        return {
+            "total": len(wb.locks.locks),
+            "locks": [_lock_to_dict(lock) for lock in wb.locks.locks.values()],
+        }
+
+    @app.route("/api/locks/<string:slug>", methods=["GET"])
+    @auth_required
+    def api_lock_info(slug: str):
+        lock = _find_lock(slug)
+        if not lock:
+            return {"status": "error", "response": f"Lock [{slug}] not found"}, 404
+        return _lock_to_dict(lock)
+
+    @app.route("/api/locks/<string:slug>/<string:action>", methods=["POST"])
+    @auth_required
+    def api_lock_action(slug: str, action: str):
+        lock = _find_lock(slug)
+        if not lock:
+            return {"status": "error", "response": f"Lock [{slug}] not found"}, 404
+        if action.lower() not in {"lock", "unlock"}:
+            return {"status": "error", "response": "action must be 'lock' or 'unlock'"}, 400
+        wb.locks._dispatch_command(lock, action.upper())
+        return {"status": "success", "lock": slug, "action": action.lower()}
 
     @app.route("/api")
     @auth_required
