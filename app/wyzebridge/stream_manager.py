@@ -341,11 +341,21 @@ class StreamManager:
         return write_native_snapshot(alias, cam_name)
 
     def get_snapshot(self, cam_name: str) -> dict:
+        # All three paths write to IMG_PATH/{cam_name}.{IMG_TYPE} but none of
+        # them publish to MQTT — that only happens via monitor_snapshots when
+        # ffmpeg from snap_all's queue finishes. For on-demand callers
+        # (button press, /snapshot HTTP, motion event), publish here so
+        # HA's MQTT-discovery camera entity sees the fresh image.
         if self._go2rtc_snapshot(cam_name, require_selected=True):
+            update_preview(cam_name)
             return {"ok": True, "source": "go2rtc"}
         if self._go2rtc_snapshot(cam_name):
+            update_preview(cam_name)
             return {"ok": True, "source": "go2rtc"}
-        return {"ok": self.get_rtsp_snap(cam_name), "source": "rtsp"}
+        if self.get_rtsp_snap(cam_name):
+            update_preview(cam_name)
+            return {"ok": True, "source": "rtsp"}
+        return {"ok": False, "source": "rtsp"}
 
     def _restart_stream_for_snapshot(self, cam_name: str) -> bool:
         if not (stream := self.get(cam_name)):
