@@ -243,7 +243,13 @@ class WyzeLockManager(Thread):
         topics = [f"locks/{lock.slug}/set" for lock in self.locks.values()]
         if not topics:
             return
-        self._mqtt_client = mqtt_sub_topic(topics, self._on_command)
+        client = mqtt_sub_topic(topics, self._on_command)
+        if client:
+            # mqtt_sub_topic stores the callback as user_data but does NOT
+            # wire it to on_message — same gotcha cam_control() works around.
+            client.on_message = self._on_command
+            self._mqtt_client = client
+            logger.info(f"[LOCKS] subscribed to {len(topics)} command topic(s)")
 
     def _on_command(self, client, _userdata, msg) -> None:
         del client
