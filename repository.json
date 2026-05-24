@@ -1,5 +1,5 @@
 {
-    "name": "docker-wyze-bridge-v4",
-    "url": "https://github.com/thatdaveguy1/docker-wyze-bridge",
-    "maintainer": "thatdaveguy1"
+    "name": "docker-wyze-bridge-v4 (howeasy fork)",
+    "url": "https://github.com/howeasy/docker-wyze-bridge",
+    "maintainer": "howeasy (fork of thatdaveguy1/docker-wyze-bridge)"
 }
