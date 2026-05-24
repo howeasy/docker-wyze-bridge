@@ -30,11 +30,6 @@ _VALIDATED_NATIVE_MODELS = {
         "selected": True,
         "sub_selected": True,
     },
-    "HL_CFL2": {
-        "reason": "HL_CFL2 Floodlight V2 enabled on native go2rtc to escape the 480x640 cap on the bridge TUTK path",
-        "selected": True,
-        "sub_selected": True,
-    },
     "HL_BC": {
         "reason": "HL_BC stays bridge-first because native go2rtc still validated at 640x360",
         "selected": False,
